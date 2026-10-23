@@ -8,7 +8,7 @@
   :root{--bg:#0b0f14;--panel:rgba(14,20,28,.86);--line:#243244;--accent:#ff7a1a;--accent2:#35c3ff;--text:#e8eef5;--muted:#8fa0b4;--danger:#ff3b5c;--ok:#39d98a}
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%;background:var(--bg);color:var(--text);font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent}
-  #c{position:fixed;inset:0;display:block}
+  #c{position:fixed;inset:0;display:block;width:100%;height:100%;touch-action:none}
   .screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;z-index:10}
   .screen.on{display:flex}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;backdrop-filter:blur(14px);max-width:560px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,.6)}
@@ -26,25 +26,57 @@
   #faceCanvas{display:none}
   .oval{position:absolute;left:50%;top:50%;width:46%;aspect-ratio:3/4;transform:translate(-50%,-50%);border:3px dashed rgba(255,255,255,.8);border-radius:50%;pointer-events:none;box-shadow:0 0 0 2000px rgba(0,0,0,.35)}
   .camwrap{position:relative;overflow:hidden;border-radius:14px}
-  /* builder */
-  #s-build{justify-content:flex-end;pointer-events:none}
-  #s-build .dock{pointer-events:auto;width:100%;max-width:980px;background:var(--panel);border:1px solid var(--line);border-radius:18px 18px 0 0;padding:12px 14px;max-height:48vh;display:flex;flex-direction:column;gap:8px}
-  .slots{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
-  .slots::-webkit-scrollbar{display:none}
-  .slot{flex:0 0 auto;border:1px solid var(--line);background:#121a25;border-radius:10px;padding:8px 10px;font-size:12px;cursor:pointer;white-space:nowrap;color:var(--muted)}
-  .slot.sel{border-color:var(--accent);color:#fff;background:#2a1b10}
+  /* builder: 가로=오른쪽 사이드 패널, 세로=하단 시트. 접기/펼치기 가능 */
+  #s-build{padding:0;pointer-events:none}
+  #s-build.on{display:block}
+  .dock{pointer-events:auto;position:fixed;z-index:12;background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(14px);display:flex;flex-direction:column;gap:8px;transition:transform .25s ease;padding:10px 12px}
+  .dock-head{display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .dock-head h2{margin:0;font-size:15px}
+  .mini{padding:7px 10px;font-size:12px;border-radius:10px}
+  .hint{font-size:11.5px;color:var(--muted)}
+  .hint b{color:var(--accent)}
+  .slots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+  .slot{border:1px solid var(--line);background:#121a25;border-radius:9px;padding:5px 7px;font-size:11.5px;cursor:pointer;color:var(--muted);min-width:0}
+  .slot.sel{border-color:var(--accent);color:#fff;background:#2a1b10;box-shadow:0 0 0 1px var(--accent) inset}
   .slot.has{color:#fff}
-  .slot b{display:block;font-size:11px;color:var(--accent2);font-weight:600}
-  .weapons{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px;overflow-y:auto;padding-right:2px}
-  .wp{border:1px solid var(--line);background:#121a25;border-radius:10px;padding:8px;cursor:pointer;font-size:12px;line-height:1.3}
-  .wp:hover{border-color:#3b4e66}
+  .slot b{display:block;font-size:10.5px;color:var(--accent2);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .weapons{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:5px;overflow-y:auto;min-height:0;flex:1;padding-right:2px;-webkit-overflow-scrolling:touch;align-content:start}
+  .wp{border:1px solid var(--line);background:#121a25;border-radius:9px;padding:6px 7px;cursor:pointer;font-size:12px;line-height:1.25}
   .wp.sel{border-color:var(--accent);background:#2a1b10}
-  .wp .ic{font-size:20px}
-  .wp .nm{font-weight:700;display:block;margin:2px 0}
-  .wp .st{color:var(--muted);font-size:10.5px}
-  .topbar{pointer-events:auto;position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;gap:10px}
-  .pill{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:13px}
+  .wp .nm{font-weight:700;display:block}
+  .wp .st{color:var(--muted);font-size:10px;display:block;margin-top:2px}
+  .bl-top{pointer-events:auto;position:fixed;top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));display:flex;gap:8px;align-items:center;z-index:11}
+  .battle-fab{pointer-events:auto;position:fixed;z-index:11;left:max(14px,env(safe-area-inset-left));bottom:max(14px,env(safe-area-inset-bottom));padding:14px 26px;font-size:18px}
+  .dock-tab{pointer-events:auto;position:fixed;z-index:11;display:none;padding:12px 14px;font-size:14px}
+  #s-build.closed .dock-tab{display:inline-flex}
+  @media (orientation:landscape){
+    .dock{top:0;right:0;bottom:0;width:min(400px,46vw);border-radius:16px 0 0 16px;padding-right:max(12px,env(safe-area-inset-right))}
+    #s-build.closed .dock{transform:translateX(105%)}
+    .dock-tab{right:max(10px,env(safe-area-inset-right));top:50%;transform:translateY(-50%)}
+  }
+  @media (orientation:portrait){
+    .dock{left:0;right:0;bottom:0;height:min(52vh,460px);border-radius:16px 16px 0 0;padding-bottom:max(10px,env(safe-area-inset-bottom))}
+    #s-build.closed .dock{transform:translateY(105%)}
+    .dock-tab{left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%)}
+    .battle-fab{left:auto;bottom:auto;top:max(10px,env(safe-area-inset-top));right:10px;padding:10px 16px;font-size:15px}
+    .wp .st{display:none}
+  }
+  .pill{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 12px;font-size:12.5px;white-space:nowrap}
   .pill b{color:var(--accent)}
+  #rotate{position:fixed;inset:0;z-index:50;background:#0b0f14;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px}
+  #rotate .ph{font-size:56px;animation:rot 1.8s ease-in-out infinite}
+  @keyframes rot{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+  @media (orientation:portrait) and (pointer:coarse){ body:not(.portrait-ok) #rotate{display:flex} }
+  @media (orientation:landscape) and (max-height:620px){
+    #s-face{padding:10px}
+    #s-face .panel{max-width:920px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:18px;padding:14px;align-items:center;grid-auto-flow:dense}
+    #s-face .camwrap{grid-column:1;grid-row:1 / span 5}
+    #s-face .panel > :not(.camwrap){grid-column:2}
+    #s-face h1{font-size:22px}
+    #s-face p{margin:4px 0 0 !important;font-size:13px}
+    #s-face video,#s-face #faceCanvas{max-height:calc(100vh - 50px)}
+    #s-face .btn{padding:10px 12px;font-size:14px}
+  }
   select{background:#121a25;color:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px}
   /* battle hud */
   #hud{position:fixed;inset:0;pointer-events:none;display:none;z-index:9}
@@ -89,31 +121,40 @@
 </section>
 
 <!-- 2. 빌드 -->
-<section id="s-build" class="screen" style="justify-content:flex-end;padding:0;pointer-events:none">
-  <div class="topbar">
-    <div class="pill">⚔️ 장착 무기 <b id="wcount">0</b> / 12</div>
-    <div style="display:flex;gap:8px;pointer-events:auto">
-      <select id="diff">
-        <option value="12">적 12마리 (쉬움)</option>
-        <option value="24" selected>적 24마리 (보통)</option>
-        <option value="40">적 40마리 (어려움)</option>
-        <option value="70">적 70마리 (지옥)</option>
-      </select>
-      <button class="btn" id="btnBattle">🔥 BATTLE</button>
-    </div>
+<section id="s-build" class="screen">
+  <div class="bl-top">
+    <div class="pill">⚔️ 무기 <b id="wcount">0</b>/12</div>
+    <select id="diff" aria-label="적 수">
+      <option value="12">적 12 (쉬움)</option>
+      <option value="24" selected>적 24 (보통)</option>
+      <option value="40">적 40 (어려움)</option>
+      <option value="70">적 70 (지옥)</option>
+    </select>
   </div>
-  <div class="dock">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <h2 style="margin:0">부위 선택 → 무기 선택</h2>
-      <div style="display:flex;gap:6px">
-        <button class="btn alt" style="padding:7px 10px;font-size:12px" id="btnRandom">🎲 랜덤 풀장착</button>
-        <button class="btn alt" style="padding:7px 10px;font-size:12px" id="btnClear">비우기</button>
+  <button class="btn battle-fab" id="btnBattle">🔥 BATTLE</button>
+  <button class="btn blue dock-tab" id="btnOpenDock">🔧 무기 장착</button>
+  <div class="dock" id="dock">
+    <div class="dock-head">
+      <h2>무기 장착</h2>
+      <div style="display:flex;gap:5px">
+        <button class="btn alt mini" id="btnRandom">🎲 랜덤</button>
+        <button class="btn alt mini" id="btnClear">비우기</button>
+        <button class="btn alt mini" id="btnCloseDock" aria-label="패널 접기">접기 ✕</button>
       </div>
     </div>
+    <div class="hint"><b>①</b> 부위 선택 (주황 점이 위치) → <b>②</b> 무기 선택</div>
     <div class="slots" id="slots"></div>
     <div class="weapons" id="weapons"></div>
   </div>
 </section>
+
+<div id="rotate">
+  <div class="ph">📱</div>
+  <b style="font-size:20px">휴대폰을 가로로 돌려주세요</b>
+  <p>이 게임은 가로 화면에 맞춰져 있어요.<br>아이폰은 제어센터의 <b>화면 세로 고정</b>을 꺼야 돌아갑니다.</p>
+  <button class="btn" id="btnLand">↻ 가로모드로 전환</button>
+  <button class="btn alt" id="btnPortrait" style="font-size:13px;padding:9px 14px">세로로 계속하기</button>
+</div>
 
 <!-- 3. HUD -->
 <div id="hud">
@@ -235,6 +276,14 @@ $('#btnRetake').onclick=()=>{showLive(); if(!stream)startCam();};
 $('#btnUse').onclick=()=>{ stopCam(); goBuild(); };
 startCam();
 
+async function goLandscape(){
+  try{ const el=document.documentElement; if(!document.fullscreenElement&&el.requestFullscreen) await el.requestFullscreen({navigationUI:'hide'}); }catch(e){}
+  try{ if(screen.orientation&&screen.orientation.lock) await screen.orientation.lock('landscape'); }catch(e){}
+}
+$('#btnLand').onclick=goLandscape;
+$('#btnPortrait').onclick=()=>{document.body.classList.add('portrait-ok');setTimeout(resize,50);};
+addEventListener('pointerdown',function once(e){ if(e.pointerType==='touch'&&!document.body.classList.contains('portrait-ok')){goLandscape();} removeEventListener('pointerdown',once,true); },true);
+
 /* ============================================================
    3D 기본 세팅
    ============================================================ */
@@ -246,7 +295,7 @@ renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene();
 scene.fog=new THREE.FogExp2(0xc5d6e4,0.0055);
 const camera=new THREE.PerspectiveCamera(50,1,0.1,600);
-function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
+function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();if(window.__ready){const d=frameView();if(state==='build')orbit.dist=d;else if(state==='battle')orbit.dist=clamp(d*1.3,20,32);}}
 addEventListener('resize',resize); resize();
 
 // 하늘
@@ -309,8 +358,8 @@ const cv=$('#c');
 cv.addEventListener('pointerdown',e=>{orbit.drag=true;orbit.lx=e.clientX;orbit.ly=e.clientY;});
 addEventListener('pointerup',()=>orbit.drag=false);
 addEventListener('pointermove',e=>{if(!orbit.drag)return;orbit.theta-=(e.clientX-orbit.lx)*0.006;orbit.phi=clamp(orbit.phi-(e.clientY-orbit.ly)*0.005,0.25,1.5);orbit.lx=e.clientX;orbit.ly=e.clientY;});
-cv.addEventListener('wheel',e=>{orbit.dist=clamp(orbit.dist*(1+e.deltaY*0.001),5,60);},{passive:true});
-cv.addEventListener('touchmove',e=>{if(e.touches.length==2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(orbit.pd)orbit.dist=clamp(orbit.dist*(orbit.pd/d),5,60);orbit.pd=d;orbit.drag=false;}},{passive:true});
+cv.addEventListener('wheel',e=>{orbit.dist=clamp(orbit.dist*(1+e.deltaY*0.001),5,40);},{passive:true});
+cv.addEventListener('touchmove',e=>{if(e.touches.length==2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(orbit.pd)orbit.dist=clamp(orbit.dist*(orbit.pd/d),5,40);orbit.pd=d;orbit.drag=false;}},{passive:true});
 cv.addEventListener('touchend',()=>orbit.pd=0);
 function updCam(dt){
   const t=orbit.target;
@@ -444,11 +493,29 @@ function goBuild(){
   if(player)dinos.remove(player);
   player=makeDino({scale:1,player:true,face:faceTexture,color:[72,112,58]});
   dinos.add(player); player.position.set(0,0,0);
-  orbit.target.set(0,2.0,0); orbit.dist=17; orbit.theta=0.5; orbit.phi=1.3;
+  state='build';
   Object.keys(mounted).forEach(k=>delete mounted[k]);
   for(const k in loadout) mount(k,loadout[k]);
-  renderSlots(); renderWeapons(); state='build';
+  renderSlots(); renderWeapons();
+  $('#s-build').classList.remove('closed');
+  orbit.target.set(0,3.0,-1.5); orbit.theta=0.75; orbit.phi=1.2; orbit.dist=frameView();
 }
+/* 패널이 가린 영역을 빼고 남은 화면 중앙에 캐릭터가 오도록 카메라 오프셋 + 거리 자동 맞춤 */
+function frameView(){
+  const W=innerWidth,H=innerHeight,land=W>=H; let ox=0,oy=0,fw=1,fh=1;
+  const open=state==='build'&&!$('#s-build').classList.contains('closed');
+  if(open){const r=$('#dock').getBoundingClientRect(); if(land){ox=r.width/2;fw=(W-r.width)/W;} else {oy=r.height/2;fh=(H-r.height)/H;}}
+  if(state==='build') camera.setViewOffset(W,H,ox,oy,W,H); else camera.clearViewOffset();
+  const t=2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
+  const dH=9.5/(t*fh*0.8), dW=15/(t*(W/H)*fw*0.9);
+  return clamp(Math.max(dH,dW),12,30);
+}
+function setDock(open){ $('#s-build').classList.toggle('closed',!open); orbit.dist=frameView(); }
+$('#btnCloseDock').onclick=()=>setDock(false);
+$('#btnOpenDock').onclick=()=>setDock(true);
+const marker=new THREE.Mesh(new THREE.SphereGeometry(0.32,16,12),new THREE.MeshBasicMaterial({color:0xff7a1a,transparent:true,opacity:.75,depthTest:false}));
+marker.renderOrder=999;
+function placeMarker(){ if(marker.parent)marker.parent.remove(marker); if(state==='build'&&player){const a=player.userData.slots[selSlot]; if(a)a.add(marker);} }
 function mount(slot,wid){
   const a=player.userData.slots[slot]; if(!a)return;
   if(mounted[slot]){a.remove(mounted[slot]);delete mounted[slot];}
@@ -462,20 +529,21 @@ function renderSlots(){
     d.innerHTML=s.nm+'<b>'+(loadout[s.id]?WMAP[loadout[s.id]].ic+' '+WMAP[loadout[s.id]].nm:'비어있음')+'</b>';
     d.onclick=()=>{selSlot=s.id;renderSlots();renderWeapons();};el.appendChild(d);}
   $('#wcount').textContent=Object.keys(loadout).length;
+  placeMarker();
 }
 function renderWeapons(){
   const el=$('#weapons'); el.innerHTML='';
-  const none=document.createElement('div');none.className='wp'+(!loadout[selSlot]?' sel':'');none.innerHTML='<div class="ic">🚫</div><span class="nm">없음</span><span class="st">슬롯 비우기</span>';
+  const none=document.createElement('div');none.className='wp'+(!loadout[selSlot]?' sel':'');none.innerHTML='<span class="nm">🚫 없음</span><span class="st">이 부위 비우기</span>';
   none.onclick=()=>{mount(selSlot,null);renderSlots();renderWeapons();};el.appendChild(none);
   for(const w of WEAPONS){const d=document.createElement('div');d.className='wp'+(loadout[selSlot]===w.id?' sel':'');
-    d.innerHTML=`<div class="ic">${w.ic}</div><span class="nm">${w.nm}</span><span class="st">피해 ${w.dmg} · ${(1/w.rate).toFixed(1)}/s · 사거리 ${w.range}</span>`;
+    d.innerHTML=`<span class="nm">${w.ic} ${w.nm}</span><span class="st">피해 ${w.dmg} · ${(1/w.rate).toFixed(1)}/s · 사거리 ${w.range}</span>`;
     d.onclick=()=>{mount(selSlot,w.id);renderSlots();renderWeapons();};el.appendChild(d);}
 }
 $('#btnRandom').onclick=()=>{for(const s of SLOTS)mount(s.id,WEAPONS[Math.floor(Math.random()*WEAPONS.length)].id);renderSlots();renderWeapons();};
 $('#btnClear').onclick=()=>{for(const s of SLOTS)mount(s.id,null);renderSlots();renderWeapons();};
 $('#btnBattle').onclick=()=>{ startBattle(); };
 $('#btnAgain').onclick=()=>goBuild();
-$('#btnNewFace').onclick=()=>{$('#s-end').classList.remove('on');$('#s-face').classList.add('on');showLive();startCam();state='face';};
+$('#btnNewFace').onclick=()=>{$('#s-end').classList.remove('on');$('#s-face').classList.add('on');showLive();startCam();state='face';frameView();};
 
 /* ============================================================
    배틀
@@ -501,7 +569,7 @@ function startBattle(){
     dinos.add(m); enemies.push({mesh:m,hp:18+sc*40,maxHp:18+sc*40,speed:rnd(5,8.5),bite:rnd(2,4),cd:rnd(0,1),alive:true,slow:0,vel:new THREE.Vector3(),ph:rnd(0,6),dead:0});
   }
   for(const s in mounted){mounted[s].userData.cd=rnd(0,WMAP[loadout[s]].rate);}
-  orbit.dist=20; orbit.phi=1.15; state='battle';
+  state='battle'; placeMarker(); orbit.phi=1.05; orbit.dist=clamp(frameView()*1.3,20,32);
   $('#enLeft').textContent=n;
 }
 function endBattle(win){
@@ -609,12 +677,14 @@ function animDino(d,t,walk){
 let last=performance.now(), tAnim=0;
 function loop(now){
   requestAnimationFrame(loop); const dt=Math.min(0.05,(now-last)/1000); last=now; tAnim+=dt;
-  if(state==='build'&&player){ player.rotation.y+=dt*0.25; animDino(player,tAnim*3,0.15); for(const s in mounted){const sp=mounted[s].userData.spin;if(sp)sp.rotation.z+=dt*20;} }
+  if(marker.parent)marker.scale.setScalar(1+0.3*Math.sin(tAnim*6));
+  if(state==='build'&&player){ if(!orbit.drag)player.rotation.y+=dt*0.12; animDino(player,tAnim*3,0.15); for(const s in mounted){const sp=mounted[s].userData.spin;if(sp)sp.rotation.z+=dt*20;} }
   if(state==='battle') updBattle(dt);
   updEffects(dt); updCam(dt);
   renderer.render(scene,camera);
 }
 requestAnimationFrame(loop);
+window.__ready=true;
 
 function updBattle(dt){
   tBattle+=dt; $('#tm').textContent=tBattle.toFixed(1)+'s';
